@@ -9,6 +9,7 @@
 
 # _________________________________________________________________Some initial arrangements______________________________________________________________________________________
 timestamp=$(date "+%F-%T")
+export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
 
 # Get command arguments and assign them to variables
 project_name=u_projects/$timestamp"_"$1
@@ -56,7 +57,7 @@ sim_seq_output_folder=$f1/sim_data/sim_seq_output/sample
 
 # 1) Simulation of mutagenesis with sim_mut.py
 {
-	python2 simulator/sim-mut.py -nbr $nbr_mutations -mod d -con $f0/$in_fasta -out $sim_mut_output_folder 2>> $my_log_file
+	python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod d -con $f0/$in_fasta -out $sim_mut_output_folder 2>> $my_log_file
 
 } || {
 	echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_log_file
@@ -70,7 +71,7 @@ parmut_sample=$sim_mut_output_folder/mutated_genome/mutated_genome.fa
 parpol_sample=$f0/$in_fasta
 
 {
-	python2 simulator/sim-recsel.py -outdir $sim_recsel_output_folder -rec_freq_distr $rec_freq_distr -parmut $parmut_sample -parpol $parpol_sample -mutpos $mut_pos -smod r -nrec $nbr_rec_chrs 2>> $my_log_file 
+	python2 sim_scripts/sim-recsel.py -outdir $sim_recsel_output_folder -rec_freq_distr $rec_freq_distr -parmut $parmut_sample -parpol $parpol_sample -mutpos $mut_pos -smod r -nrec $nbr_rec_chrs 2>> $my_log_file 
 
 } || {
 	echo $(date "+%F > %T")": Simulation of recombination and phenotype selection failed. Quit." >> $my_log_file
@@ -89,13 +90,13 @@ basecalling_error_rate=1
 gc_bias_strength=50
 
 {
-	python2 simulator/sim-seq.py -input_folder $sim_recsel_output_folder -out $sim_seq_output_folder -mod $lib_type -rd $read_depth -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_log_file
+	python2 sim_scripts/sim-seq.py -input_folder $sim_recsel_output_folder -out $sim_seq_output_folder -mod $lib_type -rd $read_depth -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_log_file
 
 } || {
-	echo $(date "+%F > %T")": Simulation of high-throughput sequencing on F2 recombinant population failed. Quit." >> $my_log_file
+	echo $(date "+%F > %T")": Simulation of high-throughput sequencing failed. Quit." >> $my_log_file
 	exit_code=1; echo $exit_code; exit
 }
-echo $(date "+%F > %T")": Simulation of high-throughput sequencing reads on F2 recombinant population completed." >> $my_log_file
+echo $(date "+%F > %T")": Simulation of high-throughput sequencing completed." >> $my_log_file
 
 
 
@@ -109,3 +110,62 @@ echo $(date "+%F > %T")": Simulation of high-throughput sequencing reads on F2 r
 
 
 # 1) Indexing genome and aligning reads to reference with bowtie2
+
+#Run bowtie2-build on genome sequence 
+{
+	$location/toolshed/bowtie2/bowtie2-build $f0/$in_fasta $f1/genome_index 1> $f2/bowtie2-build_std1.txt 2> $f2/bowtie2-build_std2.txt
+
+} || {
+	echo $(date "+%F > %T")': Bowtie2-build on genome sequence returned an error. See log files.' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+}
+echo $(date "+%F > %T")': Bowtie2-build finished.' >> $my_log_file
+
+#Run bowtie2 paired to align raw F2 reads to genome 						<------- Ajustar los parametros del alineador / variant calling / etc para el articulo
+my_rf=$sim_seq_output_folder/pe-for_reads.fq
+my_rr=$sim_seq_output_folder/pe-rev_reads.fq
+{
+	$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $f1/genome_index -1 $my_rf -2 $my_rr -S $f1/alignment1.sam 2> $f2/bowtie2_problem-sample_std2.txt
+
+} || {
+	echo $(date "+%F > %T")': Bowtie2 returned an error during the aligment of reads. See log files.' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': Bowtie2 finished the alignment of reads to genome.' >> $my_log_file
+
+# 2) Variant calling
+
+# SAM-TO-BAM
+{
+	$location/toolshed/samtools1/samtools sort $f1/alignment1.sam > $f1/alignment1.bam 2> $f2/sam-to-bam_problem-sample_std2.txt
+	#rm -rf $1/alignment1.sam
+
+} || {
+	echo 'Error transforming SAM to BAM.' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': SAM to BAM finished.' >> $my_log_file
+
+# VC pipeline
+{
+	$location/toolshed/samtools1/samtools mpileup  -B -t DP,ADF,ADR -C50 -uf $f0/$in_fasta $f1/alignment1.bam 2> $f2/mpileup_problem-sample_std.txt | $location/toolshed/bcftools-1.3.1/bcftools call -mv -Ov > $f1/raw_variants.vcf 2> $f2/call_problem-sample_std.txt
+
+} || {
+	echo $(date "+%F > %T")': Error during variant-calling' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': Variant calling finished.' >> $my_log_file
+
+#Groom vcf
+{
+	python2 $location/an_scripts/vcf-groomer.py -a $f1/raw_variants.vcf -b $f1/variants.va  2>> $my_log_file
+
+} || {
+	echo $(date "+%F > %T")': Error during execution of vcf-groomer.py' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': VCF grooming finished.' >> $my_log_file
