@@ -169,3 +169,26 @@ echo $(date "+%F > %T")': Variant calling finished.' >> $my_log_file
 
 }
 echo $(date "+%F > %T")': VCF grooming finished.' >> $my_log_file
+
+
+
+##################################################################################################################################################################################
+#																																												 #
+#																																												 #
+#																		OUTPUT GENERATION MODULE																				 #
+#																																												 #
+#																																												 #
+##################################################################################################################################################################################
+
+{
+	python2 $location/an_scripts/plot.py -in_va $f1/variants.va -out $f3/ye.png  2>> $my_log_file
+
+} || {
+	echo $(date "+%F > %T")': Error during execution of plot.py' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': Data plotting finished.' >> $my_log_file
+
+
+xdg-open $f3/ye.png
