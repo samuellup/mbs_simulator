@@ -12,16 +12,14 @@ timestamp=$(date "+%F-%T")
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
 
 # Get command arguments and assign them to variables
-project_name=u_projects/$timestamp"_"$1
+project_name=$1
 in_fasta=$2
 nbr_mutations=$3
-
 rec_freq_distr=$4
 mut_pos=$5
 nbr_rec_chrs=$6
-
 read_depth=$7
-
+meta_folder=$8/META
 
 # Set 'exit_code' (flag variable) to it's initial value (0)
 exit_code=0
@@ -40,10 +38,14 @@ mkdir $f3
 
 touch $my_log_file
 
+my_meta_log=$meta_folder/meta.log
+my_meta_info=$meta_folder/meta_info.txt
+
+echo $project_name >> $my_meta_log
+
 sim_mut_output_folder=$f1/sim_data/sim_mut_output/mutant_strain
 sim_recsel_output_folder=$f1/sim_data/sim_recsel_output
 sim_seq_output_folder=$f1/sim_data/sim_seq_output/sample
-
 
 
 ##################################################################################################################################################################################
@@ -180,6 +182,7 @@ echo $(date "+%F > %T")': VCF grooming finished.' >> $my_log_file
 #																																												 #
 ##################################################################################################################################################################################
 
+# Scatter plot
 {
 	python2 $location/an_scripts/plot.py -in_va $f1/variants.va -out $f3/ye.png  2>> $my_log_file
 
@@ -190,5 +193,44 @@ echo $(date "+%F > %T")': VCF grooming finished.' >> $my_log_file
 }
 echo $(date "+%F > %T")': Data plotting finished.' >> $my_log_file
 
+#xdg-open $f3/ye.png
 
-xdg-open $f3/ye.png
+# Candidates analysis
+{
+	python2 $location/an_scripts/cr-analysis.py -in_va $f1/variants.va -out $my_meta_info -mps $nbr_rec_chrs -rd $read_depth  2>> $my_log_file
+
+} || {
+	echo $(date "+%F > %T")': Error during execution of cr-analysis.py' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': Data analysis finished.' >> $my_log_file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Intermediate files cleanup and re-organization
+mv $f2/log.log $project_name
+mv $f3/ye.png $project_name
+mv $f1/variants.va $project_name
+rm -rf $f1
+rm -rf $f2
+rm -rf $f3
