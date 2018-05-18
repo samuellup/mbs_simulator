@@ -18,28 +18,29 @@ my_meta_log=$meta_folder/meta.log; touch $my_meta_log
 my_meta_info=$meta_folder/meta_info.txt; touch $my_meta_info
 echo "#RD	MPS	CANDIDATES	SPAN" >> $my_meta_info
 
-rd_list=(10 20 40)
-mps_list=(20 40 80)
+rd_list=(20 30 40)
+mps_list=(25 35 45)
 
 
 # 2) Running the simulations
 rec_freq_distr='0,24-1,42-2,25-3,6-4,1-5,2'		  # <------------------------- SET
-nbr_mutations=40 								  # <------------------------- SET
-mut_pos='1,10000'
+nbr_mutations=200 								  # <------------------------- SET
+mut_pos='1,100000'
 
-for i in ${rd_list[@]}; do
-	for j in ${mps_list[@]}; do
-			rd=$i
-	        mps=$j
+for n in `seq 10`; do 							  # Number of replicates
+	for i in ${rd_list[@]}; do
+		for j in ${mps_list[@]}; do
+				rd=$i
+		        mps=$j
 
-	        project_name=$meta_name/$rd"_"$mps
+		        project_name=$meta_name/$rd"_"$mps"_"$n
 
-	        ./main_workflow.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name
+		        ./main_workflow.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name
 
-	        echo $project_name ' done!'
+		        echo $project_name ' done!'
 
+		done
 	done
 done
-
 
 # 3) Analizing the obtained data
