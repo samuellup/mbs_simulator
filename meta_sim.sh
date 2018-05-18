@@ -18,14 +18,14 @@ my_meta_log=$meta_folder/meta.log; touch $my_meta_log
 my_meta_info=$meta_folder/meta_info.txt; touch $my_meta_info
 echo "#RD	MPS	CANDIDATES	SPAN" >> $my_meta_info
 
-rd_list=(20 30 40)
-mps_list=(25 35 45)
+rd_list=(2 3)
+mps_list=(2 10)
 
 
 # 2) Running the simulations
 rec_freq_distr='0,24-1,42-2,25-3,6-4,1-5,2'		  # <------------------------- SET
-nbr_mutations=200 								  # <------------------------- SET
-mut_pos='1,100000'
+nbr_mutations=20 								  # <------------------------- SET
+mut_pos='1,10000'
 
 for n in `seq 10`; do 							  # Number of replicates
 	for i in ${rd_list[@]}; do
@@ -44,3 +44,14 @@ for n in `seq 10`; do 							  # Number of replicates
 done
 
 # 3) Analizing the obtained data
+{
+	python2 ./an_scripts/meta-analysis.py -meta_in $my_meta_info -out $meta_folder/averaged_data.txt  2>> $my_meta_log
+
+} || {
+	echo $(date "+%F > %T")': Error during execution of meta-analysis.py' >> $my_meta_log
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': meta-analysis.py finished.' >> $my_meta_log
+
+# 4) Creating a heatmap

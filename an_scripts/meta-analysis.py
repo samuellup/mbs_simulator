@@ -38,7 +38,7 @@ for tag in tag_list:
 	sum_list.append(sub_list)
 
 with open(args.out, "w") as out:
-	out.write("#RD" + "\t" + "MPS" + "\t" + "average_rd" + "\t" + "average_span" + "\n")
+	out.write("#RD" + "\t" + "MPS" + "\t" + "average_n_cand" + "\t" + "average_span" + "\n")
 
 	for value in sum_list:
 		sp = value[0].split("-")
