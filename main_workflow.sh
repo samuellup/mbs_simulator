@@ -211,22 +211,6 @@ echo $(date "+%F > %T")': Data analysis finished.' >> $my_log_file
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Intermediate files cleanup and re-organization
 mv $f2/log.log $project_name
 mv $f3/ye.png $project_name

@@ -18,14 +18,14 @@ my_meta_log=$meta_folder/meta.log; touch $my_meta_log
 my_meta_info=$meta_folder/meta_info.txt; touch $my_meta_info
 echo "#RD	MPS	CANDIDATES	SPAN" >> $my_meta_info
 
-rd_list=(2 3)
-mps_list=(2 10)
+rd_list=(30 50 70)																	# <------------------------- SET
+mps_list=(50 100 200)																	# <------------------------- SET
 
 
 # 2) Running the simulations
-rec_freq_distr='0,24-1,42-2,25-3,6-4,1-5,2'		  # <------------------------- SET
-nbr_mutations=20 								  # <------------------------- SET
-mut_pos='1,10000'
+rec_freq_distr='0,24-1,42-2,25-3,6-4,1-5,2'							     		# <------------------------- SET
+nbr_mutations=200 															    # <------------------------- SET
+mut_pos='1,10000000'
 
 for n in `seq 10`; do 							  # Number of replicates
 	for i in ${rd_list[@]}; do
