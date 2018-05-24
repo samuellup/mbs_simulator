@@ -5,8 +5,6 @@
 # command structure: 	./main_workflow.sh project_name in_fasta nbr_mutations rec_freq_distr mut_pos nbr_rec_chrs read_depth
 # test command: 		./main_workflow.sh testing check.1.fa 40 0,24-1,42-2,25-3,6-4,1-5,2 1,10000 200 20
 
-
-
 # _________________________________________________________________Some initial arrangements______________________________________________________________________________________
 timestamp=$(date "+%F-%T")
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
@@ -59,7 +57,7 @@ sim_seq_output_folder=$f1/sim_data/sim_seq_output/sample
 
 # 1) Simulation of mutagenesis with sim_mut.py
 {
-	python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod d -con $f0/$in_fasta -out $sim_mut_output_folder 2>> $my_log_file
+	python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder 2>> $my_log_file
 
 } || {
 	echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_log_file
@@ -70,7 +68,9 @@ echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_log_file
 
 # 2) Simulating recombination with sim_rec.py 
 parmut_sample=$sim_mut_output_folder/mutated_genome/mutated_genome.fa
-parpol_sample=$f0/$in_fasta
+parpol_sample=$meta_folder/mutated_genome/mutated_genome.fa
+mkdir $sim_recsel_output_folder
+
 
 {
 	python2 sim_scripts/sim-recsel.py -outdir $sim_recsel_output_folder -rec_freq_distr $rec_freq_distr -parmut $parmut_sample -parpol $parpol_sample -mutpos $mut_pos -smod r -nrec $nbr_rec_chrs 2>> $my_log_file 
@@ -80,6 +80,7 @@ parpol_sample=$f0/$in_fasta
 	exit_code=1; echo $exit_code; exit
 }
 echo $(date "+%F > %T")": Simulation of recombination and phenotype selection completed." >> $my_log_file
+
 
 
 # 3) Simulating HTS reads
@@ -163,7 +164,7 @@ echo $(date "+%F > %T")': Variant calling finished.' >> $my_log_file
 
 #Groom vcf
 {
-	python2 $location/an_scripts/vcf-groomer.py -a $f1/raw_variants.vcf -b $f1/variants.va  2>> $my_log_file
+	python2 $location/an_scripts/vcf-groomer.py -a $f1/raw_variants.vcf -b $f1/raw_variants.va  2>> $my_log_file
 
 } || {
 	echo $(date "+%F > %T")': Error during execution of vcf-groomer.py' >> $my_log_file
@@ -172,6 +173,17 @@ echo $(date "+%F > %T")': Variant calling finished.' >> $my_log_file
 }
 echo $(date "+%F > %T")': VCF grooming finished.' >> $my_log_file
 
+# Substraction of background variants
+my_operation_mode=A
+{
+	python2 $location/an_scripts/variants-operations.py -a $f1/raw_variants.va -b $meta_folder/lab.va -c $f1/variants.va -mode $my_operation_mode -primary 1  2>> $my_log_file
+
+} || {
+	echo $(date "+%F > %T")': Error during first execution of variants-operations.py .' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': VCF operations finished.' >> $my_log_file
 
 
 ##################################################################################################################################################################################
@@ -205,10 +217,6 @@ echo $(date "+%F > %T")': Data plotting finished.' >> $my_log_file
 
 }
 echo $(date "+%F > %T")': Data analysis finished.' >> $my_log_file
-
-
-
-
 
 
 # Intermediate files cleanup and re-organization
