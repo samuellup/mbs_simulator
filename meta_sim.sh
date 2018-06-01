@@ -32,9 +32,10 @@ echo "#RD	MPS	CANDIDATES	SPAN" >> $my_meta_info
 
 nbr_background_mutations=109															# <------------------------- SET
 
-rd_list=(30 60 120)																		# <------------------------- SET
-mps_list=(320)																	# <------------------------- SET
-
+rd_list=(30 60 200)																		# <------------------------- SET
+mps_list=(80 320)																	# <------------------------- SET
+#mps_list=(10 20)
+#rd_list=(10 15)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
 
 
@@ -139,9 +140,10 @@ rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.b
 
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 nbr_mutations=156 															    # <------------------------- SET
-mut_pos='1,10000000'
+mut_pos='1,5845220'
+#mut_pos='1,50000'
 
-for n in `seq 10`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 20`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 				rd=$i

@@ -1,8 +1,9 @@
-import matplotlib.pyplot as plt
+
 from numpy.random import rand
 import argparse
-
-
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-in_va', action="store", dest='in_va', required=True)
