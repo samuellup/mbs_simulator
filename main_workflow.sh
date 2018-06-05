@@ -2,8 +2,8 @@
 # (3) generates .vcf and .va files and processes them into relevant data
 
 
-# command structure: 	./main_workflow.sh project_name in_fasta nbr_mutations rec_freq_distr mut_pos nbr_rec_chrs read_depth
-# test command: 		./main_workflow.sh testing check.1.fa 40 0,24-1,42-2,25-3,6-4,1-5,2 1,10000 200 20
+# command structure: 	./main_workflow.sh project_name in_fasta nbr_mutations rec_freq_distr mut_pos nbr_rec_chrs read_depth meta_folder map_pop
+# test command: 		./main_workflow.sh testing check.1.fa 40 0,24-1,42-2,25-3,6-4,1-5,2 1,10000 200 20 META M2
 
 # _________________________________________________________________Some initial arrangements______________________________________________________________________________________
 timestamp=$(date "+%F-%T")
@@ -18,6 +18,7 @@ mut_pos=$5
 nbr_rec_chrs=$6
 read_depth=$7
 meta_folder=$8/META
+map_pop=$9
 
 # Set 'exit_code' (flag variable) to it's initial value (0)
 exit_code=0
@@ -44,6 +45,8 @@ echo $project_name >> $my_meta_log
 sim_mut_output_folder=$f1/sim_data/sim_mut_output/mutant_strain
 sim_recsel_output_folder=$f1/sim_data/sim_recsel_output
 sim_seq_output_folder=$f1/sim_data/sim_seq_output/sample
+sim_mut_output_folder_1=$f1/sim_data/sim_mut_output/mutant_strain_1
+sim_mut_output_folder_2=$f1/sim_data/sim_mut_output/mutant_strain_2
 
 
 ##################################################################################################################################################################################
@@ -55,31 +58,78 @@ sim_seq_output_folder=$f1/sim_data/sim_seq_output/sample
 ##################################################################################################################################################################################
 
 
-# 1) Simulation of mutagenesis with sim_mut.py
-{
-	python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder 2>> $my_log_file
+if [ $map_pop == 'F2' ]; then
 
-} || {
-	echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_log_file
-	exit_code=1; echo $exit_code; exit
-}
-echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_log_file
+	# 1) Simulation of mutagenesis with sim_mut.py
+	{
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder 2>> $my_log_file
 
-
-# 2) Simulating recombination with sim_rec.py 
-parmut_sample=$sim_mut_output_folder/mutated_genome/mutated_genome.fa
-parpol_sample=$meta_folder/mutated_genome/mutated_genome.fa
-mkdir $sim_recsel_output_folder
+	} || {
+		echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_log_file
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_log_file
 
 
-{
-	python2 sim_scripts/sim-recsel.py -outdir $sim_recsel_output_folder -rec_freq_distr $rec_freq_distr -parmut $parmut_sample -parpol $parpol_sample -mutpos $mut_pos -smod r -nrec $nbr_rec_chrs 2>> $my_log_file 
+	# 2) Simulating recombination with sim_rec.py 
+	parmut_sample=$sim_mut_output_folder/mutated_genome/mutated_genome.fa
+	parpol_sample=$meta_folder/mutated_genome/mutated_genome.fa
+	mkdir $sim_recsel_output_folder
+	{
+		python2 sim_scripts/sim-recsel.py -outdir $sim_recsel_output_folder -rec_freq_distr $rec_freq_distr -parmut $parmut_sample -parpol $parpol_sample -mutpos $mut_pos -smod r -nrec $nbr_rec_chrs 2>> $my_log_file 
 
-} || {
-	echo $(date "+%F > %T")": Simulation of recombination and phenotype selection failed. Quit." >> $my_log_file
-	exit_code=1; echo $exit_code; exit
-}
-echo $(date "+%F > %T")": Simulation of recombination and phenotype selection completed." >> $my_log_file
+	} || {
+		echo $(date "+%F > %T")": Simulation of recombination and phenotype selection failed. Quit." >> $my_log_file
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of recombination and phenotype selection completed." >> $my_log_file
+
+fi
+
+
+if [ $map_pop == 'M2' ]; then
+
+
+	# We have to define the number of mutations for each chromatide, aproximately 1/2 of the total.
+
+
+	nbr_mutations_1=`python2 an_scripts/rand.py -nbr_mutations $nbr_mutations 2>> $my_log_file`
+
+
+	nbr_mutations_2=$(( nbr_mutations-nbr_mutations_1 ))
+	
+	echo $nbr_mutations_1 >> $my_log_file
+	echo $nbr_mutations_2 >> $my_log_file
+
+
+	# 1) Simulation of mutagenesis of each chromosome with sim_mut.py
+	{
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_1 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder_1 2>> $my_log_file
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_2 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder_2 2>> $my_log_file
+
+	} || {
+		echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_log_file
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_log_file
+
+
+
+	# 2) Simulating recombination with sim_rec.py 
+	parmut_sample=$sim_mut_output_folder_1/mutated_genome/mutated_genome.fa
+	parpol_sample=$sim_mut_output_folder_2/mutated_genome/mutated_genome.fa
+	mkdir $sim_recsel_output_folder
+	{
+		python2 sim_scripts/sim-recsel.py -outdir $sim_recsel_output_folder -rec_freq_distr $rec_freq_distr -parmut $parmut_sample -parpol $parpol_sample -mutpos $mut_pos -smod r -nrec $nbr_rec_chrs 2>> $my_log_file 
+
+	} || {
+		echo $(date "+%F > %T")": Simulation of recombination and phenotype selection failed. Quit." >> $my_log_file
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of recombination and phenotype selection completed." >> $my_log_file
+
+
+fi
 
 
 
