@@ -223,13 +223,24 @@ echo $(date "+%F > %T")': Variant calling finished.' >> $my_log_file
 }
 echo $(date "+%F > %T")': VCF grooming finished.' >> $my_log_file
 
+# Filter .va file
+{
+	python2 $location/an_scripts/variants-filter.py -a $f1/raw_variants.va -b $f1/filtered_variants.va -step 3 -fasta $f0/$in_fasta -dp_min 7 -qual_min 20  2>> $my_log_file
+
+} || {
+	echo 'Error during execution of variants-filter.py with F2 data.' >> $my_log_file
+	exit_code=1; echo $exit_code; exit
+
+}
+echo $(date "+%F > %T")': VCF filtering step of sample data finished.' >> $my_log_file
+
 # Substraction of background variants
 my_operation_mode=A
 {
-	python2 $location/an_scripts/variants-operations.py -a $f1/raw_variants.va -b $meta_folder/lab.va -c $f1/variants.va -mode $my_operation_mode -primary 1  2>> $my_log_file
+	python2 $location/an_scripts/variants-operations.py -a $f1/filtered_variants.va -b $meta_folder/lab.va -c $f1/variants.va -mode $my_operation_mode -primary 1  2>> $my_log_file
 
 } || {
-	echo $(date "+%F > %T")': Error during first execution of variants-operations.py .' >> $my_log_file
+	echo $(date "+%F > %T")': Error during execution of variants-operations.py .' >> $my_log_file
 	exit_code=1; echo $exit_code; exit
 
 }

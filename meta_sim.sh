@@ -1,7 +1,7 @@
 # This runs main_workflow.sh to perform several simulations while variating the RD (Read Depth) and MPS (Mapping Mopulation Size) parameters. 
 
-# command structure: 	./meta_sim.sh meta_name in_fasta 
-# test command: 		./meta_sim.sh testing check.1.fa
+# command structure: 	./meta_sim.sh meta_name in_fasta map_pop
+# test command: 		./meta_sim.sh testing check.1.fa M2
 
 
 
@@ -22,6 +22,7 @@ timestamp=$(date "+%F-%T")
 
 meta_name=u_projects/$timestamp"_"$1
 in_fasta=$2
+map_pop=$3
 mkdir $meta_name
 mkdir $meta_name/META
 meta_folder=$meta_name/META
@@ -32,8 +33,8 @@ echo "#RD	MPS	CANDIDATES	SPAN" >> $my_meta_info
 
 nbr_background_mutations=109															# <------------------------- SET
 
-rd_list=(30 60 200)																		# <------------------------- SET
-mps_list=(80 320)																	# <------------------------- SET
+rd_list=(15 20)																		# <------------------------- SET
+mps_list=(20 50)																	# <------------------------- SET
 #mps_list=(10 20)
 #rd_list=(10 15)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
@@ -60,9 +61,9 @@ fragment_length_mean=500
 fragment_length_sd=100
 basecalling_error_rate=1
 gc_bias_strength=50
-
+control_rd=6 									#<------------- SET
 {
-	python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd 70 -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
+	python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
 
 } || {
 	echo $(date "+%F > %T")": Simulation of high-throughput sequencing failed. Quit." >> $my_meta_log
@@ -140,10 +141,10 @@ rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.b
 
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 nbr_mutations=156 															    # <------------------------- SET
-mut_pos='1,5845220'
-#mut_pos='1,50000'
+#mut_pos='1,5845220'
+mut_pos='1,50000'
 
-for n in `seq 20`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 5`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 				rd=$i
@@ -151,7 +152,7 @@ for n in `seq 20`; do 							 								# <------------------------- SET Number of
 
 		        project_name=$meta_name/$rd"_"$mps"_"$n
 
-		        ./main_workflow.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name
+		        ./main_workflow.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name $map_pop
 
 		        echo $project_name ' done!'
 
