@@ -26,11 +26,31 @@ with open(args.in_va, "r") as variants:
 pos_min=float("inf")
 pos_max=0
 
+
+
+# Without curation
+'''
 for var in candidates:
 	if var[0] < pos_min: pos_min = var[0]
 	if var[0] > pos_max: pos_max = var[0]
 	cr_span = pos_max - pos_min
 	if cr_span == 0: cr_span = 1
+'''
+
+# With curation
+for var in candidates:
+	try:
+		d = var[0] - ant 
+		if d < 4000000:
+			if var[0] < pos_min: pos_min = var[0]
+			if var[0] > pos_max: pos_max = var[0]
+			cr_span = pos_max - pos_min
+			if cr_span == 0: cr_span = 1
+		ant = var[0]
+
+	except:
+		ant = var[0]
+
 
 n_candidates = len(candidates)
 
