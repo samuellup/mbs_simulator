@@ -19,7 +19,7 @@ with open(args.in_va, "r") as variants:
 			sp = line.split()
 			position = int(sp[1])
 			af = float(sp[6])/(float(sp[6]) + float(sp[5]))
-			if af > 0.98:
+			if af > 0.95:
 				coord=[position, af]
 				candidates.append(coord)
 
