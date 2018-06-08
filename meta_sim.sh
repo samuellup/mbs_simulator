@@ -55,8 +55,8 @@ echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_meta_log
 lib_type=se 									#<------------- Comprobar y establecer parametros por defecto, establecer RD para la muestra control
 read_length_mean=200
 read_length_sd=40
-fragment_length_mean=-
-fragment_length_sd=-
+fragment_length_mean=500
+fragment_length_sd=100
 basecalling_error_rate=1
 gc_bias_strength=100
 control_rd=60 									#<------------- SET
