@@ -1,8 +1,13 @@
 import argparse
 
+
+# Ill apply a "step" argument to this script in order to analyze the 95 an 98 min AF data and get two different output files
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-meta_in', action="store", dest='meta_in', required=True)
 parser.add_argument('-out', action="store", dest='out', required=True)
+parser.add_argument('-step', action="store", dest='step', required=True)
+
 args = parser.parse_args()
 
 tag_list=list()
@@ -28,9 +33,14 @@ for tag in tag_list:
 				sp2 = line.split('\t')
 				tag2 = sp2[0] + "-" + sp2[1]
 				if tag2 == tag:
-					epsilon_rd = epsilon_rd + int(sp2[2])
-					epsilon_span = epsilon_span + int(sp2[3])
-					n_samples = n_samples + 1
+					if args.step == "95":
+						epsilon_rd = epsilon_rd + int(sp2[2])
+						epsilon_span = epsilon_span + int(sp2[3])
+						n_samples = n_samples + 1
+					if args.step == "98":
+						epsilon_rd = epsilon_rd + int(sp2[4])
+						epsilon_span = epsilon_span + int(sp2[5])
+						n_samples = n_samples + 1
 
 	average_rd = float(epsilon_rd)/n_samples
 	average_span = float(epsilon_span)/n_samples
