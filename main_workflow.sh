@@ -134,13 +134,13 @@ fi
 
 
 # 3) Simulating HTS reads
-lib_type=pe 									#<------------- Comprobar y establecer parametros por defecto
-read_length_mean=100
-read_length_sd=0
-fragment_length_mean=500
-fragment_length_sd=100
+lib_type=se 									#<------------- Comprobar y establecer parametros por defecto
+read_length_mean=200
+read_length_sd=40
+fragment_length_mean=-
+fragment_length_sd=-
 basecalling_error_rate=1
-gc_bias_strength=50
+gc_bias_strength=100
 
 {
 	python2 sim_scripts/sim-seq.py -input_folder $sim_recsel_output_folder -out $sim_seq_output_folder -mod $lib_type -rd $read_depth -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_log_file
