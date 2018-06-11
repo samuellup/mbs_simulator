@@ -31,10 +31,10 @@ echo "#RD	MPS	CANDIDATES_95	SPAN_95	CANDIDATES_98	SPAN_98" >> $my_meta_info
 
 nbr_background_mutations=109															# <------------------------- SET
 
-#rd_list=(15 20)																		# <------------------------- SET
-#mps_list=(20 25)																	# <------------------------- SET
-mps_list=(40 80 160 320)
-rd_list=(30 60 200)
+rd_list=(15 20)																		# <------------------------- SET
+mps_list=(20 25)																	# <------------------------- SET
+#mps_list=(40 80 160 320)
+#rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
 
 
@@ -59,7 +59,8 @@ fragment_length_mean=500
 fragment_length_sd=100
 basecalling_error_rate=1
 gc_bias_strength=100
-control_rd=60 									#<------------- SET
+control_rd=6 									#<------------- SET
+
 {
 	python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
 
@@ -82,10 +83,9 @@ echo $(date "+%F > %T")": Simulation of high-throughput sequencing completed." >
 echo $(date "+%F > %T")': Bowtie2-build finished.' >> $my_meta_log
 
 # bowtie2 												<------- Ajustar los parametros del alineador / variant calling / etc para el articulo
-my_rf=$meta_folder/seq_out/pe-for_reads.fq
-my_rr=$meta_folder/seq_out/pe-rev_reads.fq
+my_rd=$meta_folder/seq_out/se_reads.fq
 {
-	$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $meta_folder/genome_index -1 $my_rf -2 $my_rr -S $meta_folder/alignment1.sam 2> $meta_folder/bowtie2_problem-sample_std2.txt
+	$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $meta_folder/genome_index -U $my_rd -S $meta_folder/alignment1.sam 2> $meta_folder/bowtie2_problem-sample_std2.txt
 
 } || {
 	echo $(date "+%F > %T")': Bowtie2 returned an error during the aligment of reads. See log files.' >> $my_meta_log
@@ -139,8 +139,8 @@ rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.b
 
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 nbr_mutations=156 															    # <------------------------- SET
-mut_pos='1,5845220'
-#mut_pos='1,50000'
+#mut_pos='1,5845220'
+mut_pos='1,50000'
 
 for n in `seq 20`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do

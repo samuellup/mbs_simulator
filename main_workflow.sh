@@ -134,7 +134,7 @@ fi
 
 
 # 3) Simulating HTS reads
-lib_type=se 									#<------------- Comprobar y establecer parametros por defecto
+lib_type=se 									#<------------- Comprobar y establecer parametros por defecto, establecer RD para la muestra control
 read_length_mean=200
 read_length_sd=40
 fragment_length_mean=500
@@ -175,10 +175,9 @@ echo $(date "+%F > %T")": Simulation of high-throughput sequencing completed." >
 echo $(date "+%F > %T")': Bowtie2-build finished.' >> $my_log_file
 
 #Run bowtie2 paired to align raw F2 reads to genome 						<------- Ajustar los parametros del alineador / variant calling / etc para el articulo
-my_rf=$sim_seq_output_folder/pe-for_reads.fq
-my_rr=$sim_seq_output_folder/pe-rev_reads.fq
+my_rd=$sim_seq_output_folder/se_reads.fq
 {
-	$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $f1/genome_index -1 $my_rf -2 $my_rr -S $f1/alignment1.sam 2> $f2/bowtie2_problem-sample_std2.txt
+	$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $f1/genome_index -U $my_rd -S $f1/alignment1.sam 2> $f2/bowtie2_problem-sample_std2.txt
 
 } || {
 	echo $(date "+%F > %T")': Bowtie2 returned an error during the aligment of reads. See log files.' >> $my_log_file
