@@ -20,6 +20,10 @@ read_depth=$7
 meta_folder=$8/META
 map_pop=$9
 
+
+causal_mut=$(echo $mut_pos | cut -d'-' -f 1) 
+
+
 # Set 'exit_code' (flag variable) to it's initial value (0)
 exit_code=0
 
@@ -62,7 +66,7 @@ if [ $map_pop == 'F2' ]; then
 
 	# 1) Simulation of mutagenesis with sim_mut.py
 	{
-		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder 2>> $my_log_file
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -causal_mut $causal_mut -out $sim_mut_output_folder 2>> $my_log_file
 
 	} || {
 		echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_log_file
@@ -104,7 +108,7 @@ if [ $map_pop == 'M2' ]; then
 
 	# 1) Simulation of mutagenesis of each chromosome with sim_mut.py
 	{
-		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_1 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder_1 2>> $my_log_file
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_1 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -causal_mut $causal_mut -out $sim_mut_output_folder_1 2>> $my_log_file
 		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_2 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder_2 2>> $my_log_file
 
 	} || {

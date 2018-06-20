@@ -29,10 +29,11 @@ my_meta_log=$meta_folder/meta.log; touch $my_meta_log
 my_meta_info=$meta_folder/meta_info.txt; touch $my_meta_info
 echo "#RD	MPS	CANDIDATES_95	SPAN_95	CANDIDATES_98	SPAN_98" >> $my_meta_info
 
-nbr_background_mutations=109															# <------------------------- SET
+#nbr_background_mutations=109															# <------------------------- Backcross
+nbr_background_mutations=175000															# <------------------------- Outcross
 
-rd_list=(20)																		# <------------------------- SET
-mps_list=(20)																	# <------------------------- SET
+rd_list=(30)																		# <------------------------- SET
+mps_list=(40)																	# <------------------------- SET
 #mps_list=(40 80 160 320)
 #rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
@@ -59,7 +60,7 @@ fragment_length_mean=500
 fragment_length_sd=100
 basecalling_error_rate=1
 gc_bias_strength=100
-control_rd=20 									#<------------- SET
+control_rd=120 									#<------------- SET
 
 {
 	python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
@@ -138,11 +139,11 @@ rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.b
 # 3) Running the simulations ____________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
-nbr_mutations=156 															    # <------------------------- SET
-#mut_pos='1,5845220'
-mut_pos='1,50000'
+nbr_mutations=232 															    # <------------------------- SET
+mut_pos='1,5845220'
+#mut_pos='1,500000'
 
-for n in `seq 2`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 5`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 				rd=$i
@@ -168,7 +169,4 @@ done
 
 }
 echo $(date "+%F > %T")': meta-analysis.py finished.' >> $my_meta_log
-
-
-# 5) Creating a heatmap ________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
