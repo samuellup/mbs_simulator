@@ -1,3 +1,4 @@
+#!/bin/bash
 # This runs main_workflow.sh to perform several simulations while variating the RD (Read Depth) and MPS (Mapping Mopulation Size) parameters. 
 
 # command structure: 	./meta_sim.sh meta_name in_fasta map_pop
@@ -29,11 +30,11 @@ my_meta_log=$meta_folder/meta.log; touch $my_meta_log
 my_meta_info=$meta_folder/meta_info.txt; touch $my_meta_info
 echo "#RD	MPS	CANDIDATES_95	SPAN_95	CANDIDATES_98	SPAN_98" >> $my_meta_info
 
-#nbr_background_mutations=109															# <------------------------- Backcross
-nbr_background_mutations=175000															# <------------------------- Outcross
+nbr_background_mutations=109															# <------------------------- Backcross
+#nbr_background_mutations=175000															# <------------------------- Outcross
 
-rd_list=(30)																		# <------------------------- SET
-mps_list=(40)																	# <------------------------- SET
+rd_list=(30 15)																		# <------------------------- SET
+mps_list=(40 20 10 5)																	# <------------------------- SET
 #mps_list=(40 80 160 320)
 #rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
@@ -60,7 +61,7 @@ fragment_length_mean=500
 fragment_length_sd=100
 basecalling_error_rate=1
 gc_bias_strength=100
-control_rd=120 									#<------------- SET
+control_rd=10 									#<------------- SET
 
 {
 	python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
@@ -140,12 +141,19 @@ rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.b
 
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 nbr_mutations=232 															    # <------------------------- SET
-mut_pos='1,5845220'
-#mut_pos='1,500000'
+#mut_pos='1,5845220'
+mut_pos='1,500000'
 
-for n in `seq 5`; do 							 								# <------------------------- SET Number of replicates
+n_jobs=0
+maxjobs=$(nproc)
+
+echo $maxjobs
+
+for n in `seq 20`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
+			for p in *.m4a ; do
+				(
 				rd=$i
 		        mps=$j
 
@@ -154,9 +162,20 @@ for n in `seq 5`; do 							 								# <------------------------- SET Number of 
 		        ./main_workflow.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name $map_pop
 
 		        echo $project_name ' done!'
+		        ) &
+
+			    # limit jobs
+			    if (( $(($((++n_jobs)) % $maxjobs)) == 0 )) ; then
+			        wait # wait until all have finished (not optimal, but most times good enough)
+			    fi
+			done
 		done
 	done
 done
+
+
+wait
+
 
 # 4) Analizing the obtained data _______________________________________________________________________________________________________________________________________________________________________________________________________________
 {

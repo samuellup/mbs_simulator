@@ -1,3 +1,4 @@
+#!/bin/bash
 # This workflow (1) simulates read files from different bulked segregant mapping-by-sequencing experimental setups, (2) aligns the reads to a reference genome,
 # (3) generates .vcf and .va files and processes them into relevant data
 
