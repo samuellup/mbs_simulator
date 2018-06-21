@@ -145,11 +145,11 @@ nbr_mutations=232 															    # <------------------------- SET
 mut_pos='1,500000'
 
 n_jobs=0
-maxjobs=$(nproc)
+maxjobs=$(nproc) 							 									# <------------------------- SET Number of CPUs
 
 echo $maxjobs
 
-for n in `seq 20`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 2`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 			for p in *.m4a ; do
