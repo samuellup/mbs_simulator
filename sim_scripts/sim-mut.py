@@ -121,8 +121,11 @@ if mutator_mode == 'li' and insertion_source is None:
 output_folder_seq = output_folder + '/mutated_genome/'
 output_folder_info = output_folder + '/info/'
 
+'''
 if os.path.exists(output_folder):
 	shutil.rmtree(output_folder)
+'''
+
 
 os.makedirs(output_folder_seq)
 os.makedirs(output_folder_info)
