@@ -53,84 +53,187 @@ export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT
 echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_meta_log
 
 
-# Simulating HTS reads
-lib_type=se 									#<------------- Comprobar y establecer parametros por defecto, establecer RD para la muestra control
-read_length_mean=200
-read_length_sd=40
-fragment_length_mean=500
-fragment_length_sd=100
-basecalling_error_rate=1
-gc_bias_strength=100
-control_rd=10 									#<------------- SET
+if [ $map_pop != 'OC' ]; then
 
-{
-	python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
+	# Simulating HTS reads
+	lib_type=se 									#<------------- Comprobar y establecer parametros por defecto, establecer RD para la muestra control
+	read_length_mean=200
+	read_length_sd=40
+	fragment_length_mean=500
+	fragment_length_sd=100
+	basecalling_error_rate=1
+	gc_bias_strength=100
+	control_rd=10 									#<------------- SET
 
-} || {
-	echo $(date "+%F > %T")": Simulation of high-throughput sequencing failed. Quit." >> $my_meta_log
-	exit_code=1; echo $exit_code; exit
-}
-echo $(date "+%F > %T")": Simulation of high-throughput sequencing completed." >> $my_meta_log
+	{
+		python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
 
-
-
-# bowtie2-build 
-{
-	$location/toolshed/bowtie2/bowtie2-build ./u_data/$in_fasta $meta_folder/genome_index 1> $meta_folder/bowtie2-build_std1.txt 2> $meta_folder/bowtie2-build_std2.txt
-
-} || {
-	echo $(date "+%F > %T")': Bowtie2-build on genome sequence returned an error. See log files.' >> $my_meta_log
-	exit_code=1; echo $exit_code; exit
-}
-echo $(date "+%F > %T")': Bowtie2-build finished.' >> $my_meta_log
-
-# bowtie2 												<------- Ajustar los parametros del alineador / variant calling / etc para el articulo
-my_rd=$meta_folder/seq_out/se_reads.fq
-{
-	$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $meta_folder/genome_index -U $my_rd -S $meta_folder/alignment1.sam 2> $meta_folder/bowtie2_problem-sample_std2.txt
-
-} || {
-	echo $(date "+%F > %T")': Bowtie2 returned an error during the aligment of reads. See log files.' >> $my_meta_log
-	exit_code=1; echo $exit_code; exit
-
-}
-echo $(date "+%F > %T")': Bowtie2 finished the alignment of reads to genome.' >> $my_meta_log
+	} || {
+		echo $(date "+%F > %T")": Simulation of high-throughput sequencing failed. Quit." >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of high-throughput sequencing completed." >> $my_meta_log
 
 
-# SAM-TO-BAM
-{
-	$location/toolshed/samtools1/samtools sort $meta_folder/alignment1.sam > $meta_folder/alignment1.bam 2> $meta_folder/sam-to-bam_problem-sample_std2.txt
-	rm -rf $meta_folder/alignment1.sam
+	# bowtie2-build 
+	{
+		$location/toolshed/bowtie2/bowtie2-build ./u_data/$in_fasta $meta_folder/genome_index 1> $meta_folder/bowtie2-build_std1.txt 2> $meta_folder/bowtie2-build_std2.txt
 
-} || {
-	echo 'Error transforming SAM to BAM.' >> $my_meta_log
-	exit_code=1; echo $exit_code; exit
+	} || {
+		echo $(date "+%F > %T")': Bowtie2-build on genome sequence returned an error. See log files.' >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")': Bowtie2-build finished.' >> $my_meta_log
 
-}
-echo $(date "+%F > %T")': SAM to BAM finished.' >> $my_meta_log
+	# bowtie2 												<------- Ajustar los parametros del alineador / variant calling / etc para el articulo
+	my_rd=$meta_folder/seq_out/se_reads.fq
+	{
+		$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $meta_folder/genome_index -U $my_rd -S $meta_folder/alignment1.sam 2> $meta_folder/bowtie2_problem-sample_std2.txt
+
+	} || {
+		echo $(date "+%F > %T")': Bowtie2 returned an error during the aligment of reads. See log files.' >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+
+	}
+	echo $(date "+%F > %T")': Bowtie2 finished the alignment of reads to genome.' >> $my_meta_log
 
 
-# VC pipeline
-{
-	$location/toolshed/samtools1/samtools mpileup  -B -t DP,ADF,ADR -C50 -uf ./u_data/$in_fasta $meta_folder/alignment1.bam 2> $meta_folder/mpileup_problem-sample_std.txt | $location/toolshed/bcftools-1.3.1/bcftools call -mv -Ov > $meta_folder/raw_variants.vcf 2> $meta_folder/call_problem-sample_std.txt
+	# SAM-TO-BAM
+	{
+		$location/toolshed/samtools1/samtools sort $meta_folder/alignment1.sam > $meta_folder/alignment1.bam 2> $meta_folder/sam-to-bam_problem-sample_std2.txt
+		rm -rf $meta_folder/alignment1.sam
 
-} || {
-	echo $(date "+%F > %T")': Error during variant-calling' >> $my_meta_log
-	exit_code=1; echo $exit_code; exit
+	} || {
+		echo 'Error transforming SAM to BAM.' >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
 
-}
-echo $(date "+%F > %T")': Variant calling finished.' >> $my_meta_log
+	}
+	echo $(date "+%F > %T")': SAM to BAM finished.' >> $my_meta_log
 
-# Groom vcf
-{
-	python2 $location/an_scripts/vcf-groomer.py -a $meta_folder/raw_variants.vcf -b $meta_folder/lab.va  2>> $my_meta_log
 
-} || {
-	echo $(date "+%F > %T")': Error during execution of vcf-groomer.py' >> $my_meta_log
-	exit_code=1; echo $exit_code; exit
+	# VC pipeline
+	{
+		$location/toolshed/samtools1/samtools mpileup  -B -t DP,ADF,ADR -C50 -uf ./u_data/$in_fasta $meta_folder/alignment1.bam 2> $meta_folder/mpileup_problem-sample_std.txt | $location/toolshed/bcftools-1.3.1/bcftools call -mv -Ov > $meta_folder/raw_variants.vcf 2> $meta_folder/call_problem-sample_std.txt
 
-}
-echo $(date "+%F > %T")': VCF grooming finished.' >> $my_meta_log
+	} || {
+		echo $(date "+%F > %T")': Error during variant-calling' >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+
+	}
+	echo $(date "+%F > %T")': Variant calling finished.' >> $my_meta_log
+
+	# Groom vcf
+	{
+		python2 $location/an_scripts/vcf-groomer.py -a $meta_folder/raw_variants.vcf -b $meta_folder/lab.va  2>> $my_meta_log
+
+	} || {
+		echo $(date "+%F > %T")': Error during execution of vcf-groomer.py' >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+
+	}
+	echo $(date "+%F > %T")': VCF grooming finished.' >> $my_meta_log
+
+fi
+
+if [ $map_pop == 'OC' ]; then
+	for r in `seq 3`; do 							 								
+
+		# Simulating HTS reads
+		lib_type=se 									#<------------- Comprobar y establecer parametros por defecto, establecer RD para la muestra control
+		read_length_mean=200
+		read_length_sd=40
+		fragment_length_mean=500
+		fragment_length_sd=100
+		basecalling_error_rate=1
+		gc_bias_strength=100
+		control_rd=10 									#<------------- SET
+
+		{
+			python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
+
+		} || {
+			echo $(date "+%F > %T")": Simulation of high-throughput sequencing failed. Quit." >> $my_meta_log
+			exit_code=1; echo $exit_code; exit
+		}
+		echo $(date "+%F > %T")": Simulation of high-throughput sequencing completed." >> $my_meta_log
+
+
+		# bowtie2-build 
+		{
+			$location/toolshed/bowtie2/bowtie2-build ./u_data/$in_fasta $meta_folder/genome_index 1> $meta_folder/bowtie2-build_std1.txt 2> $meta_folder/bowtie2-build_std2.txt
+
+		} || {
+			echo $(date "+%F > %T")': Bowtie2-build on genome sequence returned an error. See log files.' >> $my_meta_log
+			exit_code=1; echo $exit_code; exit
+		}
+		echo $(date "+%F > %T")': Bowtie2-build finished.' >> $my_meta_log
+
+		# bowtie2 												<------- Ajustar los parametros del alineador / variant calling / etc para el articulo
+		my_rd=$meta_folder/seq_out/se_reads.fq
+		{
+			$location/toolshed/bowtie2/bowtie2 --very-sensitive  --mp 3,2 -X 1000  -x $meta_folder/genome_index -U $my_rd -S $meta_folder/alignment1.sam 2> $meta_folder/bowtie2_problem-sample_std2.txt
+
+		} || {
+			echo $(date "+%F > %T")': Bowtie2 returned an error during the aligment of reads. See log files.' >> $my_meta_log
+			exit_code=1; echo $exit_code; exit
+
+		}
+		echo $(date "+%F > %T")': Bowtie2 finished the alignment of reads to genome.' >> $my_meta_log
+
+
+		# SAM-TO-BAM
+		{
+			$location/toolshed/samtools1/samtools sort $meta_folder/alignment1.sam > $meta_folder/alignment1.bam 2> $meta_folder/sam-to-bam_problem-sample_std2.txt
+			rm -rf $meta_folder/alignment1.sam
+
+		} || {
+			echo 'Error transforming SAM to BAM.' >> $my_meta_log
+			exit_code=1; echo $exit_code; exit
+
+		}
+		echo $(date "+%F > %T")': SAM to BAM finished.' >> $my_meta_log
+
+
+		# VC pipeline
+		{
+			$location/toolshed/samtools1/samtools mpileup  -B -t DP,ADF,ADR -C50 -uf ./u_data/$in_fasta $meta_folder/alignment1.bam 2> $meta_folder/mpileup_problem-sample_std.txt | $location/toolshed/bcftools-1.3.1/bcftools call -mv -Ov > $meta_folder/raw_variants.vcf 2> $meta_folder/call_problem-sample_std.txt
+
+		} || {
+			echo $(date "+%F > %T")': Error during variant-calling' >> $my_meta_log
+			exit_code=1; echo $exit_code; exit
+
+		}
+		echo $(date "+%F > %T")': Variant calling finished.' >> $my_meta_log
+
+		# Groom vcf
+		{
+			python2 $location/an_scripts/vcf-groomer.py -a $meta_folder/raw_variants.vcf -b $meta_folder/lab_$r.va  2>> $my_meta_log
+
+		} || {
+			echo $(date "+%F > %T")': Error during execution of vcf-groomer.py' >> $my_meta_log
+			exit_code=1; echo $exit_code; exit
+
+		}
+		echo $(date "+%F > %T")': VCF grooming finished.' >> $my_meta_log
+		# Cleanup
+		rm -rf $meta_folder/*.bt2 $meta_folder/*.vcf $meta_folder/*.bam 
+
+	done
+
+	# Var operation fuses variants on all control files
+	my_operation_mode=U
+	{
+		python2 $location/an_scripts/variants-operations.py -a $meta_folder/lab_1.va -b $meta_folder/lab_2.va -c $meta_folder/lab_i.va -mode $my_operation_mode -primary 1  2>> $my_meta_log
+		python2 $location/an_scripts/variants-operations.py -a $meta_folder/lab_i.va -b $meta_folder/lab_3.va -c $meta_folder/lab.va -mode $my_operation_mode -primary 1  2>> $my_meta_log
+
+	} || {
+		echo $(date "+%F > %T")': Error during execution of variants-operations.py .' >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+
+	}
+	echo $(date "+%F > %T")': VCF operations finished.' >> $my_meta_log
+
+fi
 
 # Cleanup
 rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.bam $meta_folder/seq_out
@@ -148,7 +251,7 @@ sim_mut_output_folder=$meta_folder/sim_data/sim_mut_output/mutant_strain
 sim_mut_output_folder_1=$meta_folder/sim_data/sim_mut_output/mutant_strain_1
 sim_mut_output_folder_2=$meta_folder/sim_data/sim_mut_output/mutant_strain_2
 
-if [ $map_pop == 'F2' ]; then
+if [ $map_pop != 'M2' ]; then
 
 	# Simulation of mutagenesis with sim_mut.py
 	{

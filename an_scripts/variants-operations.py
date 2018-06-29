@@ -25,7 +25,7 @@ lines2 = f2.readlines()
 
 #Output
 output = args.output
-f3 = open(output, 'w')
+f3 = open(output, 'a')
 
 c = '-'
 
@@ -98,14 +98,23 @@ elif mode == 'U':
 				sp = line.split('\t')
 				vcf2.append(sp[0].strip() + '-' + sp[1].strip())
 			
-		union = list(set(vcf1) | set(vcf2))
+		written=list()
 
 		for i, line in enumerate(lines1):
 			if not line.startswith('#'):
 				sp = line.split('\t')
-				if (sp[0].strip()+'-'+sp[1].strip()) in union:
+				tagg=(sp[0].strip()+'-'+sp[1].strip())
+				f3.write(line)
+				written.append(tagg)
+
+		for i, line in enumerate(lines2):
+			if not line.startswith('#'):
+				sp = line.split('\t')
+				tagg=(sp[0].strip()+'-'+sp[1].strip())
+				if tagg not in written:
 					f3.write(line)
 
+		'''
 		input3 = 'op_output.vcf'
 		f3 = open(input3, 'r')
 		lines3 = f3.readlines()
@@ -126,6 +135,7 @@ elif mode == 'U':
 				sp = line.split('\t')
 				if (sp[0].strip()+'-'+sp[1].strip()) in R:
 					f3.write(line)
+		'''
 
 	elif primary == 2:			
 		vcf1 = list() #List of vcf1 positions

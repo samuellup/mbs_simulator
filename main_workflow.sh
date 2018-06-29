@@ -63,7 +63,7 @@ sim_mut_output_folder_2=$meta_folder/sim_data/sim_mut_output/mutant_strain_2
 ##################################################################################################################################################################################
 
 
-if [ $map_pop == 'F2' ]; then
+if [ $map_pop != 'M2' ]; then
 
 	# 1) Simulating recombination with sim_rec.py 
 	parmut_sample=$sim_mut_output_folder/mutated_genome/mutated_genome.fa
