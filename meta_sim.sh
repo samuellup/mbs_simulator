@@ -9,7 +9,7 @@
 ######################################################### STRATEGY #########################################################
 #
 # 1- Simulation of CHR4-Lab -> lab.va with variants of lab strain and lab.fa with the sequence
-# 2- lab.fa is used as a base for the second mutagenesis within main_workflow.sh; -> variants.va, substraction of variants.va - lab.va 
+# 2- lab.fa is used as a base for the second mutagenesis 
 # 4- Analysis of output
 # 5- Meta-analysis
 #
@@ -34,7 +34,7 @@ nbr_background_mutations=109															# <------------------------- Backcros
 #nbr_background_mutations=175000															# <------------------------- Outcross
 
 rd_list=(30 15)																		# <------------------------- SET
-mps_list=(40 20 10 5)																	# <------------------------- SET
+mps_list=(20 10)																	# <------------------------- SET
 #mps_list=(40 80 160 320)
 #rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
@@ -136,13 +136,57 @@ echo $(date "+%F > %T")': VCF grooming finished.' >> $my_meta_log
 rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.bam $meta_folder/seq_out
 
 
+# 3) Simulation of mutant strain ____________________________________________________________________________________________________________________________________________________________________________________________________________________
 
-# 3) Running the simulations ____________________________________________________________________________________________________________________________________________________________________________________________________________________
-
-rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
-nbr_mutations=232 															    # <------------------------- SET
+nbr_mutations=232 
 #mut_pos='1,5845220'
 mut_pos='1,500000'
+
+causal_mut=$(echo $mut_pos | cut -d'-' -f 1) 
+
+sim_mut_output_folder=$meta_folder/sim_data/sim_mut_output/mutant_strain
+sim_mut_output_folder_1=$meta_folder/sim_data/sim_mut_output/mutant_strain_1
+sim_mut_output_folder_2=$meta_folder/sim_data/sim_mut_output/mutant_strain_2
+
+if [ $map_pop == 'F2' ]; then
+
+	# Simulation of mutagenesis with sim_mut.py
+	{
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -causal_mut $causal_mut -out $sim_mut_output_folder 2>> $my_meta_log
+
+	} || {
+		echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_meta_log
+
+fi
+
+if [ $map_pop == 'M2' ]; then
+
+	# We have to define the number of mutations for each chromatide, aproximately 1/2 of the total.
+	nbr_mutations_1=`python2 an_scripts/rand.py -nbr_mutations $nbr_mutations 2>> $my_meta_log`
+	nbr_mutations_2=$(( nbr_mutations-nbr_mutations_1 ))
+	
+	echo "Nbr_mutations_1: " $nbr_mutations_1 >> $my_meta_log
+	echo "Nbr_mutations_2: " $nbr_mutations_2 >> $my_meta_log
+
+	# 1) Simulation of mutagenesis of each chromosome with sim_mut.py
+	{
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_1 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -causal_mut $causal_mut -out $sim_mut_output_folder_1 2>> $my_meta_log
+		python2 sim_scripts/sim-mut.py -nbr $nbr_mutations_2 -mod e -con $meta_folder/mutated_genome/mutated_genome.fa -out $sim_mut_output_folder_2 2>> $my_meta_log
+
+	} || {
+		echo $(date "+%F > %T")": Simulation of mutagenesis failed. Quit." >> $my_meta_log
+		exit_code=1; echo $exit_code; exit
+	}
+	echo $(date "+%F > %T")": Simulation of mutagenesis completed." >> $my_meta_log
+fi
+
+
+# 4) Running the individual simulations ____________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 
 n_jobs=0
 maxjobs=$(nproc) 							 									# <------------------------- SET Number of CPUs
@@ -164,10 +208,11 @@ for n in `seq 2`; do 							 								# <------------------------- SET Number of 
 		        echo $project_name ' done!'
 		        ) &
 
-			    # limit jobs
-			    if (( $(($((++n_jobs)) % $maxjobs)) == 0 )) ; then
-			        wait # wait until all have finished (not optimal, but most times good enough)
-			    fi
+				jobs_running=$(jobs -p | wc -w)
+				while [ $jobs_running -ge "${maxjobs}" ]; do
+				     sleep 30
+				     jobs_running=$(jobs -p | wc -w)
+				done
 			done
 		done
 	done
@@ -177,7 +222,7 @@ done
 wait
 
 
-# 4) Analizing the obtained data _______________________________________________________________________________________________________________________________________________________________________________________________________________
+# 5) Analizing the metadata _______________________________________________________________________________________________________________________________________________________________________________________________________________
 {
 	python2 ./an_scripts/meta-analysis.py -meta_in $my_meta_info -out $meta_folder/averaged_data_95.txt -step 95 2>> $my_meta_log
 	python2 ./an_scripts/meta-analysis.py -meta_in $my_meta_info -out $meta_folder/averaged_data_98.txt -step 98 2>> $my_meta_log
