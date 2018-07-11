@@ -24,7 +24,7 @@ with open(args.in_va, "r") as variants:
 			sp = line.split()
 			position = int(sp[1])
 			af = float(sp[6])/(float(sp[6]) + float(sp[5]))
-			if af > 0.95:
+			if af >= 0.95:
 				coord=[position, af]
 				candidates_95.append(coord)
 
@@ -34,7 +34,7 @@ with open(args.in_va, "r") as variants:
 			sp = line.split()
 			position = int(sp[1])
 			af = float(sp[6])/(float(sp[6]) + float(sp[5]))
-			if af > 0.98:
+			if af >= 0.98:
 				coord=[position, af]
 				candidates_98.append(coord)
 
@@ -50,7 +50,7 @@ pos_max_98=0
 for var in candidates_95:
 	try:
 		d_95 = var[0] - ant_95
-		if d_95 < 5845000:
+		if d_95 < 5846000:
 			if var[0] < pos_min_95: pos_min_95 = var[0]
 			if var[0] > pos_max_95: pos_max_95 = var[0]
 			cr_span_95 = pos_max_95 - pos_min_95
@@ -64,7 +64,7 @@ for var in candidates_95:
 for var in candidates_98:
 	try:
 		d_98 = var[0] - ant_98 
-		if d_98 < 5845000:
+		if d_98 < 5846000:
 			if var[0] < pos_min_98: pos_min_98 = var[0]
 			if var[0] > pos_max_98: pos_max_98 = var[0]
 			cr_span_98 = pos_max_98 - pos_min_98
