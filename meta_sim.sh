@@ -33,8 +33,8 @@ echo "#RD	MPS	CANDIDATES_95	SPAN_95	CANDIDATES_98	SPAN_98" >> $my_meta_info
 nbr_background_mutations=109															# <------------------------- Backcross
 #nbr_background_mutations=175000															# <------------------------- Outcross
 
-rd_list=(30 15)																		# <------------------------- SET
-mps_list=(20 10)																	# <------------------------- SET
+rd_list=(80)																		# <------------------------- SET
+mps_list=(80)																	# <------------------------- SET
 #mps_list=(40 80 160 320)
 #rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
@@ -63,7 +63,7 @@ if [ $map_pop != 'OC' ]; then
 	fragment_length_sd=100
 	basecalling_error_rate=1
 	gc_bias_strength=100
-	control_rd=10 									#<------------- SET
+	control_rd=80 									#<------------- SET
 
 	{
 		python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
@@ -240,10 +240,9 @@ rm -rf $meta_folder/*.bt2 $meta_folder/*.txt $meta_folder/*.vcf $meta_folder/*.b
 
 
 # 3) Simulation of mutant strain ____________________________________________________________________________________________________________________________________________________________________________________________________________________
-
-nbr_mutations=232 
-#mut_pos='1,5845220'
-mut_pos='1,500000'
+nbr_mutations=$4 
+mut_pos='1,5845220'
+#mut_pos='1,500000'
 
 causal_mut=$(echo $mut_pos | cut -d'-' -f 1) 
 
@@ -292,11 +291,11 @@ fi
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 
 n_jobs=0
-maxjobs=$(nproc) 							 									# <------------------------- SET Number of CPUs
-
+#maxjobs=$(nproc) 							 									# <------------------------- SET Number of CPUs
+maxjobs=3
 echo $maxjobs
 
-for n in `seq 2`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 3`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 			for p in *.m4a ; do

@@ -50,7 +50,7 @@ pos_max_98=0
 for var in candidates_95:
 	try:
 		d_95 = var[0] - ant_95
-		if d_95 < 4000000:
+		if d_95 < 5845000:
 			if var[0] < pos_min_95: pos_min_95 = var[0]
 			if var[0] > pos_max_95: pos_max_95 = var[0]
 			cr_span_95 = pos_max_95 - pos_min_95
@@ -64,7 +64,7 @@ for var in candidates_95:
 for var in candidates_98:
 	try:
 		d_98 = var[0] - ant_98 
-		if d_98 < 4000000:
+		if d_98 < 5845000:
 			if var[0] < pos_min_98: pos_min_98 = var[0]
 			if var[0] > pos_max_98: pos_max_98 = var[0]
 			cr_span_98 = pos_max_98 - pos_min_98
