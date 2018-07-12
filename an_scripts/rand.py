@@ -7,9 +7,9 @@ args = parser.parse_args()
 
 n_in = int(args.nbr_in)
 
-# 1)  40-60 percentage values
-low = int(0.4*n_in)
-high = int(0.6*n_in)
+# 1)  48-52 percentage values
+low = int(0.48*n_in)
+high = int(0.52*n_in)
 
 # 2) Random number choice
 from random import randint
