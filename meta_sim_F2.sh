@@ -35,10 +35,10 @@ echo "#RD	MPS	CANDIDATES_95	SPAN_95	CANDIDATES_98	SPAN_98" >> $my_meta_info
 nbr_background_mutations=109																# <------------------------- Backcross
 #nbr_background_mutations=175000															# <------------------------- Outcross
 
-rd_list=(10)																				# <------------------------- SET
-mps_list=(10)																				# <------------------------- SET
-#mps_list=(40 80 160 320)
-#rd_list=(30 60 200)
+#rd_list=(10)																				# <------------------------- SET
+#mps_list=(10)																				# <------------------------- SET
+mps_list=(40 80 160 320)
+rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
 
 
@@ -47,11 +47,9 @@ export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 
 n_jobs=0
-#maxjobs=$(nproc) 							 									# <------------------------- SET Number of CPUs
-maxjobs=3
-echo $maxjobs
+maxjobs=${SLURM_CPUS_ON_NODE} 							 									# <------------------------- SET Number of CPUs
 
-for n in `seq 1`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 100`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 			for p in *.m4a ; do

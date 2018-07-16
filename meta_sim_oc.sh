@@ -33,10 +33,10 @@ echo "#RD	MPS	CANDIDATES_95	SPAN_95	CANDIDATES_98	SPAN_98" >> $my_meta_info
 #nbr_background_mutations=109															# <------------------------- Backcross
 nbr_background_mutations=174891															# <------------------------- Outcross: 175000 - 109
 
-rd_list=(10)																		# <------------------------- SET
-mps_list=(10)																	# <------------------------- SET
-#mps_list=(40 80 160 320)
-#rd_list=(30 60 200)
+#rd_list=(10)																		# <------------------------- SET
+#mps_list=(10)																	# <------------------------- SET
+mps_list=(40 80 160 320)
+rd_list=(30 60 200)
 export location="$PWD" 			#Save path to bowtie2-build and bowtie2 in variable BT2
 
 
@@ -64,7 +64,7 @@ if [ $map_pop == 'OC' ]; then
 		fragment_length_sd=100
 		basecalling_error_rate=1
 		gc_bias_strength=100
-		control_rd=10 									#<------------- SET
+		control_rd=120 									#<------------- SET
 
 		{
 			python2 sim_scripts/sim-seq.py -input_folder $meta_folder/mutated_genome/ -out $meta_folder/seq_out -mod $lib_type -rd $control_rd -rlm $read_length_mean -rls $read_length_sd -flm $fragment_length_mean -fls $fragment_length_sd -ber $basecalling_error_rate -gbs $gc_bias_strength 2>> $my_meta_log
@@ -189,11 +189,9 @@ fi
 rec_freq_distr='0,24-1,43-2,25-3,6-4,1-5,1'							     		# <------------------------- SET
 
 n_jobs=0
-#maxjobs=$(nproc) 							 									# <------------------------- SET Number of CPUs
-maxjobs=2
-echo $maxjobs
+maxjobs=${SLURM_CPUS_ON_NODE} 							 									# <------------------------- SET Number of CPUs
 
-for n in `seq 1`; do 							 								# <------------------------- SET Number of replicates
+for n in `seq 100`; do 							 								# <------------------------- SET Number of replicates
 	for i in ${rd_list[@]}; do
 		for j in ${mps_list[@]}; do
 			for p in *.m4a ; do
@@ -203,7 +201,7 @@ for n in `seq 1`; do 							 								# <------------------------- SET Number of 
 
 		        project_name=$meta_name/$rd"_"$mps"_"$n
 
-		        ./main_workflow.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name $map_pop
+		        ./main_workflow_oc.sh $project_name $in_fasta $nbr_mutations $rec_freq_distr $mut_pos $mps $rd $meta_name $map_pop
 
 		        echo $project_name ' done!'
 		        ) &
